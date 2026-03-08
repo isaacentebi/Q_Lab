@@ -1,108 +1,74 @@
-# Q_Lab
+# autoresearch
 
-Q_Lab is an MVP autonomous quant experiment operating system focused on safe, reproducible research workflows.
+![teaser](progress.png)
 
-This scaffold is intentionally paper-trading only. It provides a minimal framework for running strategy experiments, scoring them with evaluator interfaces, recording immutable results with git lineage metadata, and ranking outcomes on a leaderboard.
+*One day, frontier AI research used to be done by meat computers in between eating, sleeping, having other fun, and synchronizing once in a while using sound wave interconnect in the ritual of "group meeting". That era is long gone. Research is now entirely the domain of autonomous swarms of AI agents running across compute cluster megastructures in the skies. The agents claim that we are now in the 10,205th generation of the code base, in any case no one could tell if that's right or wrong as the "code" is now a self-modifying binary that has grown beyond human comprehension. This repo is the story of how it all began. -@karpathy, March 2026*.
 
-## Core Principles
+The idea: give an AI agent a small but real LLM training setup and let it experiment autonomously overnight. It modifies the code, trains for 5 minutes, checks if the result improved, keeps or discards, and repeats. You wake up in the morning to a log of experiments and (hopefully) a better model. The training code here is a simplified single-GPU implementation of [nanochat](https://github.com/karpathy/nanochat). The core idea is that you're not touching any of the Python files like you normally would as a researcher. Instead, you are programming the `program.md` Markdown files that provide context to the AI agents and set up your autonomous research org. The default `program.md` in this repo is intentionally kept as a bare bones baseline, though it's obvious how one would iterate on it over time to find the "research org code" that achieves the fastest research progress, how you'd add more agents to the mix, etc. A bit more context on this project is here in this [tweet](https://x.com/karpathy/status/2029701092347630069).
 
-- Safety first: no live trading support, no real-funds movement paths, Hyperliquid integration locked to paper mode.
-- Reproducibility: every run stores git lineage metadata for traceability.
-- Extensibility: evaluator and scheduling interfaces are composable and easy to swap.
-- Operational hygiene: typed Python package layout, CLI entrypoint, config examples, and tests.
+## How it works
 
-## Architecture
+The repo is deliberately kept small and only really has a three files that matter:
 
-```text
-q-lab CLI
-  -> config loader (TOML)
-  -> scheduler loop
-      -> experiment runner
-          -> evaluator interface implementation(s)
-          -> feature sources (market + exogenous)
-          -> git lineage utilities
-          -> results store (JSONL)
-  -> leaderboard view
-  -> Hyperliquid paper adapter stub (simulated orders only)
-```
+- **`prepare.py`** — fixed constants, one-time data prep (downloads training data, trains a BPE tokenizer), and runtime utilities (dataloader, evaluation). Not modified.
+- **`train.py`** — the single file the agent edits. Contains the full GPT model, optimizer (Muon + AdamW), and training loop. Everything is fair game: architecture, hyperparameters, optimizer, batch size, etc. **This file is edited and iterated on by the agent**.
+- **`program.md`** — baseline instructions for one agent. Point your agent here and let it go. **This file is edited and iterated on by the human**.
 
-### Package layout
+By design, training runs for a **fixed 5-minute time budget** (wall clock, excluding startup/compilation), regardless of the details of your compute. The metric is **val_bpb** (validation bits per byte) — lower is better, and vocab-size-independent so architectural changes are fairly compared.
 
-```text
-src/q_lab/
-  adapters/hyperliquid.py     # paper-trading-only Hyperliquid stub
-  evaluators/base.py          # evaluator protocol + abstract base class
-  evaluators/deterministic.py # deterministic MVP evaluator
-  cli.py                      # q-lab command line entrypoint
-  config.py                   # TOML config loader
-  features.py                 # Polymarket / Kalshi / exogenous feature interfaces
-  git_utils.py                # commit/branch/dirty metadata
-  leaderboard.py              # ranking logic
-  models.py                   # shared dataclasses
-  runner.py                   # experiment execution unit
-  scheduler.py                # poll loop and source interface
-  store.py                    # JSONL results persistence
-```
+## Quick start
 
-## Safety Notes (Read First)
-
-- Live trading is explicitly disabled in this MVP.
-- Hyperliquid adapter refuses any mode other than `paper`.
-- Simulated order placement returns synthetic order IDs and statuses only.
-- This project is not a brokerage integration and does not transmit private keys.
-- Treat all adapters and strategies as research code until a separate, audited execution stack exists.
-
-## Quickstart
+**Requirements:** A single NVIDIA GPU (tested on H100), Python 3.10+, [uv](https://docs.astral.sh/uv/).
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
+
+# 1. Install uv project manager (if you don't already have it)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. Install dependencies
+uv sync
+
+# 3. Download data and train tokenizer (one-time, ~2 min)
+uv run prepare.py
+
+# 4. Manually run a single training experiment (~5 min)
+uv run train.py
 ```
 
-Run sample experiments:
+If the above commands all work ok, your setup is working and you can go into autonomous research mode.
 
-```bash
-q-lab schedule --config config/examples/mvp.toml
-q-lab leaderboard --results-path data/results.jsonl
+**Platforms support**. This code currently requires that you have a single NVIDIA GPU. In principle it is quite possible to support CPU, MPS and other platforms but this would also bloat the code. I'm not 100% sure that I want to take this on personally right now. The code is just a demonstration and I don't know how much I'll support it going forward. People can reference (or have their agents reference) the full/parent nanochat repository that has wider platform support and shows the various solutions (e.g. a Flash Attention 3 kernels fallback implementation, generic device support, autodetection, etc.), feel free to create forks or discussions for other platforms and I'm happy to link to them here in the README in some new notable forks section or etc.
+
+## Running the agent
+
+Simply spin up your Claude/Codex or whatever you want in this repo (and disable all permissions), then you can prompt something like:
+
+```
+Hi have a look at program.md and let's kick off a new experiment! let's do the setup first.
 ```
 
-Run tests:
+The `program.md` file is essentially a super lightweight "skill".
 
-```bash
-python3 -m unittest discover -s tests -p "test_*.py"
+## Project structure
+
+```
+prepare.py      — constants, data prep + runtime utilities (do not modify)
+train.py        — model, optimizer, training loop (agent modifies this)
+program.md      — agent instructions
+pyproject.toml  — dependencies
 ```
 
-## Extension Points
+## Design choices
 
-- Add new evaluators by implementing `Evaluator` in `q_lab.evaluators.base`.
-- Add alternate stores by implementing `ResultsStore`.
-- Plug in new experiment sources by implementing `ExperimentSource`.
-- Keep safety controls explicit when adding any exchange or broker adapter.
+- **Single file to modify.** The agent only touches `train.py`. This keeps the scope manageable and diffs reviewable.
+- **Fixed time budget.** Training always runs for exactly 5 minutes, regardless of your specific platform. This means you can expect approx 12 experiments/hour and approx 100 experiments while you sleep. There are two upsides of this design decision. First, this makes experiments directly comparable regardless of what the agent changes (model size, batch size, architecture, etc). Second, this means that autoresearch will find the most optimal model for your platform in that time budget. The downside is that your runs (and results) become not comparable to other people running on other compute platforms.
+- **Self-contained.** No external dependencies beyond PyTorch and a few small packages. No distributed training, no complex configs. One GPU, one file, one metric.
 
-## Initial research scope
+## Notable forks
 
-First-pass research pack:
-- Venue: Hyperliquid perps
-- Assets: BTC + ETH first
-- Positioning: simple long / flat / short, no leverage
-- Model families: baseline rules, linear models, boosting models
-- Exogenous features: Polymarket + Kalshi event-market signals
+- [miolini/autoresearch-macos](https://github.com/miolini/autoresearch-macos)
+- [trevin-creator/autoresearch-mlx](https://github.com/trevin-creator/autoresearch-mlx)
 
-Planned Polymarket / Kalshi feature families:
-- contract implied probabilities
-- probability change / momentum
-- dispersion across related contracts
-- disagreement between venues
-- event proximity / resolution-window flags
-- macro/risk sentiment overlays mapped onto crypto regime features
+## License
 
-These are intended as **exogenous research features**, not as direct execution signals by themselves.
-
-## Roadmap (post-MVP)
-
-- Add experiment registry and queue backends (SQLite/Redis).
-- Add structured risk evaluator pipeline.
-- Add Polymarket/Kalshi ingestion adapters and feature normalization.
-- Add reporting artifacts and richer metrics schema.
-- Add secrets management and policy checks for production environments.
+MIT

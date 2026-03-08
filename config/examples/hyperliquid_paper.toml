@@ -1,9 +1,0 @@
-[hyperliquid]
-mode = "paper"
-api_url = "https://api.hyperliquid.xyz"
-account_address = "REPLACE_WITH_TEST_OR_DEV_WALLET_ONLY"
-safety_warning = "Paper mode only. Do not use for real funds."
-
-[risk]
-max_position_usd = 1000
-daily_loss_limit_usd = 100

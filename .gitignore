@@ -1,26 +1,20 @@
-# Python
+# Python-generated files
 __pycache__/
-*.py[cod]
-*.so
-*.egg-info/
-
-# Virtual environments
-.venv/
-venv/
-
-# Test and tooling
-.pytest_cache/
-.coverage
-htmlcov/
-.mypy_cache/
-.ruff_cache/
-
-# Build artifacts
+*.py[oc]
 build/
 dist/
+wheels/
+*.egg-info
 
-# Environment
-.env
+# Virtual environments
+.venv
+worktrees/
+results/
+queue/
 
-# Local data outputs
-data/
+# Agent prompt files (generated per-session by launchers)
+CLAUDE.md
+AGENTS.md
+
+# Experimental code/artifacts
+dev/
