@@ -1,0 +1,21 @@
+[scheduler]
+poll_interval_seconds = 0.0
+max_cycles = 1
+
+[store]
+results_path = "data/results.jsonl"
+
+[[experiments]]
+experiment_id = "exp-momentum-001"
+strategy = "momentum"
+[experiments.params]
+lookback = 20
+entry_z = 1.5
+exit_z = 0.5
+
+[[experiments]]
+experiment_id = "exp-meanrev-001"
+strategy = "mean_reversion"
+[experiments.params]
+lookback = 30
+z_threshold = 2.0

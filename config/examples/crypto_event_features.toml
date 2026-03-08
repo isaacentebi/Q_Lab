@@ -1,0 +1,51 @@
+[scheduler]
+poll_interval_seconds = 0.25
+max_cycles = 1
+
+[store]
+results_path = "data/crypto_event_features_results.jsonl"
+
+[[experiments]]
+experiment_id = "btc-5m-linear-polymarket-kalshi"
+strategy = "btc_linear_event_overlay"
+
+[experiments.params]
+venue = "hyperliquid"
+symbol = "BTC"
+horizon = "5m"
+positioning = "long_flat_short"
+leverage = 0
+feature_set = [
+  "returns_5m",
+  "realized_vol_1h",
+  "funding_rate",
+  "polymarket_prob_level",
+  "polymarket_prob_velocity",
+  "kalshi_prob_level",
+  "kalshi_prob_velocity",
+  "cross_venue_disagreement",
+  "event_proximity_flag",
+]
+model_family = "linear"
+
+[[experiments]]
+experiment_id = "eth-1h-boosted-polymarket-kalshi"
+strategy = "eth_boosted_event_overlay"
+
+[experiments.params]
+venue = "hyperliquid"
+symbol = "ETH"
+horizon = "1h"
+positioning = "long_flat_short"
+leverage = 0
+feature_set = [
+  "returns_1h",
+  "realized_vol_4h",
+  "funding_rate",
+  "oi_change",
+  "polymarket_prob_level",
+  "kalshi_prob_level",
+  "cross_venue_disagreement",
+  "macro_risk_sentiment_overlay",
+]
+model_family = "boosting"
