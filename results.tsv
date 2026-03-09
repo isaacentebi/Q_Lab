@@ -38,3 +38,67 @@ mut35	-0.006293	-0.029673	0.184381	inner_discard	monthly 0.25/0.75 smoothing - s
 mut36	-0.076692	-0.033222	0.186477	inner_discard	monthly no smoothing - zero penalties but negative active sharpe -0.077
 mut37	-0.325864	-0.031495	0.198663	inner_discard	35% momentum 10% low_vol - more momentum increased instability
 mut34v	-0.004621	-0.028301	0.183925	promote_outer	BEST: monthly 0.35/0.65 smoothing risk-adj-mom+quality+FCF+low_vol sector-neutral
+mut38	-0.051034	-0.014778	0.195847	inner_discard	added accruals factor 15% weight - boosted median sharpe to 0.178 but instability penalty exploded to 0.229
+mut39	-0.030558	-0.026052	0.182515	inner_discard	shifted 5% momentum->low_vol: instab=0 but median active sharpe went negative -0.031
+mut40	0.047453	-0.025866	0.189722	inner_keep	12-month low_vol lookback - median active sharpe 0.105 first positive score_inner
+mut41	-0.723646	-0.034178	0.185190	inner_discard	12m low_vol + shifted 5% quality->low_vol - quality reduction catastrophic
+mut42	-0.485178	-0.034176	0.174400	inner_discard	12m low_vol + shifted 5% FCF->low_vol - also terrible instability 1.41
+mut43	0.052104	-0.026523	0.190121	inner_keep	12m low_vol + 0.30/0.70 smoothing - instab penalty 0.041 NEW BEST
+mut44	0.055932	-0.027220	0.190454	inner_keep	12m low_vol + 0.25/0.75 smoothing - instab penalty 0.024 NEW BEST
+mut45	0.058907	-0.027944	0.190806	inner_keep	12m low_vol + 0.20/0.80 smoothing - instab penalty 0.007 NEW BEST
+mut46	0.050434	-0.028677	0.191182	inner_discard	12m low_vol + 0.15/0.85 - instab=0 but median sharpe dropped too much
+mut47	0.059662	-0.028237	0.190951	inner_keep	12m low_vol + 0.18/0.82 smoothing - IQR=0.750 instab=0 NEW BEST
+mut48	0.059399	-0.028090	0.190878	inner_discard	12m low_vol + 0.19/0.81 smoothing - IQR=0.757 tiny penalty, marginally worse
+mut49	-0.141308	-0.031370	0.190413	inner_discard	200-day low_vol lookback - much worse than 252-day
+mut50	-0.969395	-0.054262	0.181001	inner_discard	leverage in quality composite - catastrophic, leverage scale dominated signal
+mut51	-0.205593	-0.031733	0.187286	inner_discard	80 holdings - too concentrated, median sharpe -0.206
+mut52	-0.347119	-0.034044	0.197259	inner_discard	120 holdings - too diluted, median sharpe -0.278 instab 0.889
+mut53	-0.313048	-0.035947	0.198429	inner_discard	EXIT_RANK 185 tighter buffer - hurt median sharpe
+mut54	-0.093892	-0.032392	0.183049	inner_discard	EXIT_RANK 210 wider buffer - also worse median sharpe -0.055
+mut55	-0.486256	-0.039704	0.194517	inner_discard	stronger trend filter 0.3+0.7 - much worse
+mut56	-0.351885	-0.030115	0.188875	inner_discard	weaker trend filter 0.6+0.4 - also worse
+mut57	0.059662	-0.028237	0.190951	inner_discard	quality weights 0.5/0.3/0.2 - identical result, rank invariant
+mut58	-1.282720	-0.041299	0.184330	inner_discard	removed sector neutralization - catastrophic instability 1.609
+mut59	-0.159696	-0.027464	0.188434	inner_discard	downside vol for low_vol - low IQR but negative median sharpe
+mut60	-0.261111	-0.035122	0.189895	inner_discard	6m vol for momentum risk adj - worse than 12m
+mut61	0.264781	-0.025686	0.188620	inner_keep	150-day MA trend filter - median sharpe 0.265 IQR 0.628 BREAKTHROUGH
+mut62	0.070654	-0.028340	0.191973	inner_discard	100-day MA trend filter
+mut63	0.069746	-0.026979	0.190581	inner_discard	175-day MA trend filter
+mut64	0.196620	-0.026038	0.190662	inner_keep	130-day MA trend filter
+mut65	0.128230	-0.025951	0.189691	inner_keep	140-day MA trend filter
+mut66	0.071094	-0.026708	0.190260	inner_discard	160-day MA trend filter
+mut67	0.271748	-0.022017	0.190183	inner_keep	145-day MA trend filter - median sharpe 0.272 IQR 0.727 NEW BEST
+mut68	0.197003	-0.025203	0.192178	inner_discard	155-day MA trend filter
+mut69	0.262923	-0.023942	0.189786	inner_keep	148-day MA trend filter
+mut70	0.259450	-0.024626	0.189347	inner_keep	142-day MA trend filter
+mut71	0.248224	-0.022770	0.190672	inner_discard	145d MA + 0.12/0.88 smoothing - IQR crossed threshold slightly
+mut72	0.277940	-0.021765	0.190031	inner_keep	145d MA + 0.20/0.80 smoothing - median 0.278 IQR 0.717 NEW BEST
+mut73	0.283986	-0.021514	0.189871	inner_keep	145d MA + 0.22/0.78 smoothing NEW BEST
+mut74	0.292772	-0.021142	0.189648	inner_keep	145d MA + 0.25/0.75 smoothing IQR 0.693 NEW BEST
+mut75	0.306573	-0.020538	0.189307	inner_keep	145d MA + 0.30/0.70 smoothing NEW BEST
+mut76	0.319245	-0.019965	0.188926	inner_keep	145d MA + 0.35/0.65 smoothing IQR 0.649 NEW BEST
+mut77	0.330709	-0.019429	0.188437	inner_keep	145d MA + 0.40/0.60 smoothing
+mut78	0.349606	-0.018630	0.187123	inner_keep	145d MA + 0.50/0.50 smoothing
+mut79	0.358075	-0.018438	0.185280	inner_keep	145d MA + 0.60/0.40 smoothing - instab penalty 0.004
+mut80	0.356767	-0.018434	0.186280	inner_keep	145d MA + 0.55/0.45 smoothing IQR 0.725
+mut81	0.360079	-0.018409	0.185701	inner_keep	145d MA + 0.58/0.42 smoothing IQR 0.745 NEW BEST
+mut82	0.360386	-0.018419	0.185495	inner_keep	145d MA + 0.59/0.41 smoothing - tiny penalty, effectively tied
+mut83	0.250440	-0.025466	0.056172	inner_discard	weekly rebal + 0.58/0.42 - score lower due to cumulative responsiveness
+mut84	0.265491	-0.021344	0.054509	inner_discard	weekly rebal + 0.90/0.10 - better but still below monthly best
+mut85	-2.904954	-0.095001	0.000000	inner_discard	size neutralization with categorical error - strategy crashed
+mut86	-0.714845	-0.039979	0.191121	inner_discard	size+sector neutralization - removes too much signal
+mut87	-0.915461	-0.050138	0.184512	inner_discard	SP500 only - benchmark includes all stocks so unfair
+mut88	-0.186786	-0.024777	0.186384	inner_discard	min_price $5 - added cheap stocks hurt instability
+mut89	0.029683	-0.022145	0.189713	inner_discard	$15M dollar vol - instability exploded IQR 1.242
+mut90	0.404273	-0.017025	0.185702	inner_keep	MAX_SECTOR_WEIGHT 0.20 - forced diversification IQR 0.749 NEW BEST
+mut91	0.376448	-0.017535	0.185562	inner_discard	MAX_SECTOR_WEIGHT 0.18 - IQR crossed threshold
+mut92	0.420599	-0.016777	0.186007	inner_keep	MAX_SECTOR_WEIGHT 0.22 - IQR 0.733 NEW BEST
+mut93	0.404614	-0.017285	0.185713	inner_keep	MAX_SECTOR_WEIGHT 0.23
+mut94	0.416082	-0.016799	0.185930	inner_keep	MAX_SECTOR_WEIGHT 0.21
+mut95	0.422393	-0.017033	0.184484	inner_keep	145d MA + 0.65/0.35 smooth + sector 0.22 + 12m low_vol - NEW BEST
+mut96	0.421890	-0.017530	0.183193	inner_discard	0.70/0.30 smoothing - tied
+mut97	0.419901	-0.018366	0.181588	inner_discard	0.75/0.25 smoothing - declining
+mut98	0.421982	-0.016868	0.185165	inner_discard	0.62/0.38 smoothing - tied
+mut99	0.422393	-0.017033	0.184484	inner_discard	MAX_POSITION_WEIGHT 0.015 - no effect, cap not binding
+mut100	0.422393	-0.017230	0.184484	inner_discard	min_history 200 - no effect
+mut95v	0.422393	-0.017033	0.184484	inner_keep	BEST: 145d MA + 12m low_vol + 0.65/0.35 smooth + sector 0.22 - all penalties 0
