@@ -1,74 +1,165 @@
-# autoresearch
+# Q_Lab
 
-![teaser](progress.png)
+Q_Lab is a hardened autonomous quant research harness. An external LLM agent iterates on one mutable file, [strategy.py](/Users/isaacentebi/Desktop/Q_Lab/strategy.py), while the fixed scaffold in [prepare.py](/Users/isaacentebi/Desktop/Q_Lab/prepare.py) handles point-in-time data loading, backtesting, evaluation, and auditing.
 
-*One day, frontier AI research used to be done by meat computers in between eating, sleeping, having other fun, and synchronizing once in a while using sound wave interconnect in the ritual of "group meeting". That era is long gone. Research is now entirely the domain of autonomous swarms of AI agents running across compute cluster megastructures in the skies. The agents claim that we are now in the 10,205th generation of the code base, in any case no one could tell if that's right or wrong as the "code" is now a self-modifying binary that has grown beyond human comprehension. This repo is the story of how it all began. -@karpathy, March 2026*.
+This repo is for research, not live trading. It searches for candidate long-only equity strategies, scores them on an inner validation loop, and then optionally audits stronger candidates on a hidden outer slice.
 
-The idea: give an AI agent a small but real LLM training setup and let it experiment autonomously overnight. It modifies the code, trains for 5 minutes, checks if the result improved, keeps or discards, and repeats. You wake up in the morning to a log of experiments and (hopefully) a better model. The training code here is a simplified single-GPU implementation of [nanochat](https://github.com/karpathy/nanochat). The core idea is that you're not touching any of the Python files like you normally would as a researcher. Instead, you are programming the `program.md` Markdown files that provide context to the AI agents and set up your autonomous research org. The default `program.md` in this repo is intentionally kept as a bare bones baseline, though it's obvious how one would iterate on it over time to find the "research org code" that achieves the fastest research progress, how you'd add more agents to the mix, etc. A bit more context on this project is here in this [tweet](https://x.com/karpathy/status/2029701092347630069).
+## Repo Shape
 
-## How it works
+- `prepare.py`: fixed research scaffold, PIT data pipeline, backtest engine, evaluation, audit CLI
+- `strategy.py`: the single file the autonomous agent edits during normal research
+- `program.md`: operating instructions for the agent loop
+- `results.tsv`: inner-loop experiment log
+- `tests/`: regression coverage for PIT loading, execution timing, evaluation math, and harness constraints
 
-The repo is deliberately kept small and only really has a three files that matter:
+## Current Design
 
-- **`prepare.py`** — fixed constants, one-time data prep (downloads training data, trains a BPE tokenizer), and runtime utilities (dataloader, evaluation). Not modified.
-- **`train.py`** — the single file the agent edits. Contains the full GPT model, optimizer (Muon + AdamW), and training loop. Everything is fair game: architecture, hyperparameters, optimizer, batch size, etc. **This file is edited and iterated on by the agent**.
-- **`program.md`** — baseline instructions for one agent. Point your agent here and let it go. **This file is edited and iterated on by the human**.
+- US-first equity research harness
+- Long-only, explicit-cash only
+- T+1 execution with `next_close`
+- Split signal prices vs total-return prices
+- Filing-aware fundamentals and ALFRED/FRED vintage-aware revised macro
+- Inner visible search plus outer auditor-only validation
+- Strict branch-per-run workflow
 
-By design, training runs for a **fixed 5-minute time budget** (wall clock, excluding startup/compilation), regardless of the details of your compute. The metric is **val_bpb** (validation bits per byte) — lower is better, and vocab-size-independent so architectural changes are fairly compared.
+## What The Agent Does
 
-## Quick start
+The agent is external to the harness. The intended Karpathy-style loop is:
 
-**Requirements:** A single NVIDIA GPU (tested on H100), Python 3.10+, [uv](https://docs.astral.sh/uv/).
+1. Read [program.md](/Users/isaacentebi/Desktop/Q_Lab/program.md)
+2. Edit only [strategy.py](/Users/isaacentebi/Desktop/Q_Lab/strategy.py)
+3. Run the inner evaluation
+4. Read the printed metrics
+5. Log the run to [results.tsv](/Users/isaacentebi/Desktop/Q_Lab/results.tsv)
+6. Repeat
+
+The harness itself does not spawn the search loop.
+
+## Branch Workflow
+
+Every autonomous run should start from clean `main` and use a fresh branch:
 
 ```bash
+git checkout main
+git pull
+git checkout -b qlab/<tag>
+```
 
-# 1. Install uv project manager (if you don't already have it)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+Rules:
 
-# 2. Install dependencies
+- one autonomous run = one branch
+- the agent does not create or switch branches inside the loop
+- the agent does not touch git state destructively
+- `main` is updated only by a human after review
+
+## Setup
+
+Requirements:
+
+- Python 3.10+
+- dependencies from [pyproject.toml](/Users/isaacentebi/Desktop/Q_Lab/pyproject.toml)
+- `FMP_API_KEY` in `.env`
+- `FRED_API_KEY` in `.env` for vintage-aware revised macro
+
+Install dependencies:
+
+```bash
 uv sync
-
-# 3. Download data and train tokenizer (one-time, ~2 min)
-uv run prepare.py
-
-# 4. Manually run a single training experiment (~5 min)
-uv run train.py
 ```
 
-If the above commands all work ok, your setup is working and you can go into autonomous research mode.
+Rebuild or refresh the PIT cache:
 
-**Platforms support**. This code currently requires that you have a single NVIDIA GPU. In principle it is quite possible to support CPU, MPS and other platforms but this would also bloat the code. I'm not 100% sure that I want to take this on personally right now. The code is just a demonstration and I don't know how much I'll support it going forward. People can reference (or have their agents reference) the full/parent nanochat repository that has wider platform support and shows the various solutions (e.g. a Flash Attention 3 kernels fallback implementation, generic device support, autodetection, etc.), feel free to create forks or discussions for other platforms and I'm happy to link to them here in the README in some new notable forks section or etc.
-
-## Running the agent
-
-Simply spin up your Claude/Codex or whatever you want in this repo (and disable all permissions), then you can prompt something like:
-
-```
-Hi have a look at program.md and let's kick off a new experiment! let's do the setup first.
+```bash
+uv run prepare.py --download --rebuild
 ```
 
-The `program.md` file is essentially a super lightweight "skill".
+If the schema is already current and the cache exists, a rebuild is not required.
 
-## Project structure
+## Running The Inner Loop
 
+Manual baseline:
+
+```bash
+python3 prepare.py --backtest --n-trials 0
 ```
-prepare.py      — constants, data prep + runtime utilities (do not modify)
-train.py        — model, optimizer, training loop (agent modifies this)
-program.md      — agent instructions
-pyproject.toml  — dependencies
+
+The inner-loop objective is `score_inner`, which combines:
+
+- median active Sharpe across inner slices
+- turnover penalty
+- concentration penalty
+- slice-instability penalty
+
+Higher is better.
+
+Recommended `results.tsv` schema:
+
+```tsv
+commit	score_inner	active_sharpe_daily	turnover	status	description
 ```
 
-## Design choices
+## Running The Auditor
 
-- **Single file to modify.** The agent only touches `train.py`. This keeps the scope manageable and diffs reviewable.
-- **Fixed time budget.** Training always runs for exactly 5 minutes, regardless of your specific platform. This means you can expect approx 12 experiments/hour and approx 100 experiments while you sleep. There are two upsides of this design decision. First, this makes experiments directly comparable regardless of what the agent changes (model size, batch size, architecture, etc). Second, this means that autoresearch will find the most optimal model for your platform in that time budget. The downside is that your runs (and results) become not comparable to other people running on other compute platforms.
-- **Self-contained.** No external dependencies beyond PyTorch and a few small packages. No distributed training, no complex configs. One GPU, one file, one metric.
+The auditor is Python, not an LLM. It evaluates the current [strategy.py](/Users/isaacentebi/Desktop/Q_Lab/strategy.py) on the hidden outer slice.
 
-## Notable forks
+```bash
+QLAB_AUDITOR_MODE=1 python3 prepare.py --audit --n-trials N --candidate-id <id>
+```
 
-- [miolini/autoresearch-macos](https://github.com/miolini/autoresearch-macos)
-- [trevin-creator/autoresearch-mlx](https://github.com/trevin-creator/autoresearch-mlx)
+The outer audit reports:
 
-## License
+- `DSR_eff`
+- `DSR_raw`
+- active-return bootstrap CI
+- `spa_pvalue`
+- `audit_state`
 
-MIT
+Outer audit should be run only on strong inner candidates. Audit outputs are not part of the ordinary search loop.
+
+## Data Availability Notes
+
+The harness relies on FMP stable endpoints plus FRED/ALFRED.
+
+Important limitations:
+
+- legacy FMP `api/v3` is not assumed available
+- historical S&P membership does not guarantee current vendor support for an old symbol
+- some retired or recycled symbols have only partial coverage
+- symbol-change is used as an identity hint only, not an automatic history splice
+
+The practical backtestability gate is `2020+` price support. Symbols without usable price history are marked unsupported for this harness and do not flow into the later slow-data pipeline.
+
+## Current Research Inventory
+
+The current hardened cache supports:
+
+- `1188` backtest-supported tickers
+- `1553` trading days
+- date range `2020-01-02` to `2026-03-09`
+- `17` raw PIT fundamental fields
+- `9` macro series total:
+  - `5` market-observed daily macro series
+  - `4` ALFRED vintage-aware revised macro series
+
+Inside the usable ticker universe, current coverage is:
+
+- prices: `1188 / 1188`
+- market cap history: `1039 / 1188`
+- statements: `1131 / 1188`
+- earnings: `1188 / 1188`
+- SEC filings: `1123 / 1188`
+
+These counts can change after cache rebuilds or vendor-side updates.
+
+## Safety
+
+This repo does not place trades.
+
+It is a research harness for:
+
+- searching candidate strategies
+- auditing candidate strategies
+- producing a strategy definition in [strategy.py](/Users/isaacentebi/Desktop/Q_Lab/strategy.py)
+- producing an experiment log in [results.tsv](/Users/isaacentebi/Desktop/Q_Lab/results.tsv)
+
+Use paper trading and separate implementation review before treating any candidate as production-worthy.
