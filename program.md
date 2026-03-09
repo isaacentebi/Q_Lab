@@ -10,7 +10,14 @@ This repo is an autonomous research harness, not an open-ended codebase. The fix
 
 ## Setup
 
-1. Create a fresh branch like `qlab/<tag>`.
+1. Start every autonomous run from clean `main`, then create a fresh run branch like `qlab/<tag>`.
+
+```bash
+git checkout main
+git pull
+git checkout -b qlab/<tag>
+```
+
 2. Read `prepare.py`, `strategy.py`, and this file before changing anything.
 3. Check the cache under `~/.cache/qlab/`. The cache is schema-versioned. If the schema is missing or mismatched, rebuild it with `uv run prepare.py --download --rebuild`.
 4. Run the baseline inner evaluation before making changes:
@@ -52,6 +59,24 @@ Daily search loop:
 
 The search agent updates its baseline using inner-search rules only. Outer audit never updates the agent-visible baseline.
 
+Promotion to outer audit must be strict. Use `promote_outer` only if all are true:
+
+- `score_inner > 0`
+- `slice_median_active_sharpe > 0.05`
+- at least 3 of 4 inner slices have positive active Sharpe
+- `turnover_penalty = 0`
+- `instability_penalty <= 0.10`
+- `active_sharpe_daily > 0`
+- the candidate improves materially over the current best, not by noise-level drift
+
+Default to `inner_discard` if any are true:
+
+- `score_inner` is below the current best
+- `slice_median_active_sharpe <= 0`
+- `turnover_penalty > 0`
+- `instability_penalty` jumps materially
+- raw portfolio metrics improve but active benchmark-relative metrics worsen
+
 ## Auditor-Only Audit
 
 Promotion to outer audit is a separate workflow run by a human or separate auditor process:
@@ -78,6 +103,16 @@ Also monitor:
 - `pbo` when available
 
 Audit outputs are stored outside the agent-visible run log and must not be added to the search agent’s prompt context.
+
+## Branch Policy
+
+- Do not create new branches inside the research loop.
+- Do not switch branches inside the research loop.
+- Do not run destructive git commands.
+- One autonomous run = one branch.
+- `main` is the clean blessed baseline.
+- Only a human updates `main`, and only after reviewing audited results.
+- If a run is bad, discard the branch. If a run is promising, review it and merge the winner back to `main`.
 
 ## Execution Reality
 
@@ -154,5 +189,5 @@ Use two logs, not one overloaded state machine:
 Recommended inner-search schema:
 
 ```tsv
-commit	score_inner	sharpe_daily	turnover	status	description
+commit	score_inner	active_sharpe_daily	turnover	status	description
 ```
