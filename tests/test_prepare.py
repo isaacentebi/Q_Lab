@@ -204,6 +204,34 @@ class PrepareTests(unittest.TestCase):
             self.assertAlmostEqual(float(series.dropna().iloc[0]), 100.0)
             self.assertTrue(pd.isna(series.iloc[-1]))
 
+    def test_audit_family_store_scopes_candidates_by_family(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.parquet"
+            store = prepare.AuditFamilyStore(path)
+            idx = pd.bdate_range("2024-01-02", periods=3)
+            store.upsert("fam_a", "cand_a", pd.Series([0.01, 0.02, 0.03], index=idx))
+            store.upsert("fam_b", "cand_b", pd.Series([0.04, 0.05, 0.06], index=idx))
+
+            matrix_a = store.matrix("fam_a")
+            matrix_b = store.matrix("fam_b")
+
+            self.assertEqual(list(matrix_a.columns), ["cand_a"])
+            self.assertEqual(list(matrix_b.columns), ["cand_b"])
+
+    def test_audit_family_matrix_drops_incomplete_rows_instead_of_zero_filling(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "audit.parquet"
+            store = prepare.AuditFamilyStore(path)
+            full_idx = pd.bdate_range("2024-01-02", periods=3)
+            short_idx = full_idx[:2]
+            store.upsert("fam_a", "cand_a", pd.Series([0.01, 0.02, 0.03], index=full_idx))
+            store.upsert("fam_a", "cand_b", pd.Series([0.04, 0.05], index=short_idx))
+
+            matrix = store.matrix("fam_a")
+
+            self.assertEqual(len(matrix), 2)
+            self.assertTrue(matrix.notna().all().all())
+
     def test_tradable_universe_uses_observation_count_not_consecutive_rows(self):
         dates = pd.bdate_range("2023-01-02", periods=300)
         a_series = pd.Series(np.nan, index=dates, dtype=float)
@@ -358,6 +386,8 @@ class PrepareTests(unittest.TestCase):
         self.assertIn("OLD", tickers)
         self.assertIn("OLD", set(meta_df["ticker"]))
         self.assertIn("OLD", set(membership_df["ticker"]))
+        self.assertIn(prepare.DEFAULT_BENCHMARK, tickers)
+        self.assertIn(prepare.DEFAULT_BENCHMARK, set(meta_df["ticker"]))
 
     def test_build_us_universe_metadata_paginates_delisted(self):
         page0 = [{"symbol": f"D{i:04d}", "companyName": f"D{i:04d}", "exchange": "NYSE"} for i in range(1000)]
@@ -414,10 +444,11 @@ class PrepareTests(unittest.TestCase):
         ):
             tickers, meta_df, _ = prepare.build_us_universe_metadata(client)
         self.assertIn("GOOD", tickers)
+        self.assertIn(prepare.DEFAULT_BENCHMARK, tickers)
         self.assertNotIn("ASCU.TO", tickers)
         self.assertNotIn("BFRE", tickers)
         self.assertNotIn("GCU.TO", tickers)
-        self.assertEqual(set(meta_df["ticker"]), {"GOOD"})
+        self.assertEqual(set(meta_df["ticker"]), {"GOOD", prepare.DEFAULT_BENCHMARK})
 
     def test_build_coverage_audit_flags_price_support_as_backtest_gate(self):
         with TemporaryDirectory() as tmp:
@@ -516,6 +547,36 @@ class PrepareTests(unittest.TestCase):
         self.assertEqual(name, "equal_weight_tradable_universe")
         self.assertLess(float(bench.iloc[-1]), 0.02)
         self.assertGreater(float(bench.iloc[-1]), 0.005)
+
+    def test_choose_benchmark_returns_uses_previous_day_universe(self):
+        dates = pd.bdate_range("2023-01-02", periods=260)
+        a = pd.Series(10.0, index=dates)
+        a.iloc[-2] = 10.0
+        a.iloc[-1] = 4.0
+        b = pd.Series(10.0, index=dates)
+        b.iloc[-1] = 10.2
+        volumes = pd.DataFrame({"A": 1_000_000.0, "B": 1_000_000.0}, index=dates)
+        metadata = {
+            "A": {"country": "US", "sector": "Tech", "exchange": "NASDAQ", "listing_start_date": dates[0], "listing_end_date": dates[-1]},
+            "B": {"country": "US", "sector": "Health", "exchange": "NYSE", "listing_start_date": dates[0], "listing_end_date": dates[-1]},
+        }
+        store = prepare.DataStore(
+            signal_prices=pd.DataFrame({"A": a, "B": b}),
+            total_return_prices=pd.DataFrame({"A": a, "B": b}),
+            open_prices=pd.DataFrame({"A": a, "B": b}),
+            volumes=volumes,
+            market_caps=pd.DataFrame(index=dates),
+            raw_fundamental_panels={},
+            legacy_fundamentals={},
+            macro_vintage_table=pd.DataFrame(),
+            market_macro={},
+            metadata=metadata,
+            sp500_membership={},
+            cache_dir=prepare.CACHE_DIR,
+        )
+
+        _, bench = prepare.choose_benchmark_returns(store, dates[-2:])
+        self.assertAlmostEqual(float(bench.iloc[-1]), (-0.6 + 0.02) / 2.0, places=9)
 
     def test_spa_pvalue_can_target_current_candidate(self):
         rng = np.random.default_rng(7)

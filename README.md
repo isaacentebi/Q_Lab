@@ -115,9 +115,11 @@ The outer audit reports:
 - active-return bootstrap CI
 - candidate-level `spa_pvalue`
 - `spa_family_pvalue`
+- `audit_family_id`
 - `audit_state`
 
 Outer audit should be run only on strong inner candidates. Audit outputs are not part of the ordinary search loop.
+Audit families are scoped to the current research branch / round and benchmark so unrelated runs do not contaminate each other.
 
 ## Data Availability Notes
 

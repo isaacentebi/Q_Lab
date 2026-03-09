@@ -843,6 +843,23 @@ def build_us_universe_metadata(client: FMPClient) -> tuple[list[str], pd.DataFra
             }
         )
 
+    if DEFAULT_BENCHMARK not in tickers:
+        tickers.add(DEFAULT_BENCHMARK)
+        incoming = {
+            "ticker": DEFAULT_BENCHMARK,
+            "name": "SPDR S&P 500 ETF Trust",
+            "sector": "ETF",
+            "industry": "ETF",
+            "country": "US",
+            "exchange": "ARCA",
+            "listing_start_date": None,
+            "listing_end_date": None,
+        }
+        meta_by_ticker[DEFAULT_BENCHMARK] = _coalesce_metadata_rows(
+            meta_by_ticker.get(DEFAULT_BENCHMARK, {}),
+            incoming,
+        )
+
     for row in delisted:
         symbol = row.get("symbol")
         name = row.get("companyName", row.get("name", ""))
@@ -1145,39 +1162,50 @@ class AuditFamilyStore:
 
     def load(self) -> pd.DataFrame:
         if self.path.exists():
-            return pd.read_parquet(self.path)
-        return pd.DataFrame(columns=["candidate_id", "date", "active_return"])
+            df = pd.read_parquet(self.path)
+            if "family_id" not in df.columns:
+                df["family_id"] = "legacy_global"
+            return df
+        return pd.DataFrame(columns=["family_id", "candidate_id", "date", "active_return"])
 
-    def upsert(self, candidate_id: str, returns: pd.Series) -> None:
+    def upsert(self, family_id: str, candidate_id: str, returns: pd.Series) -> None:
         with FileLock(self.lock_path):
             ensure_cache_dir(self.path.parent)
             existing = self.load()
-            existing = existing[existing["candidate_id"] != candidate_id]
+            existing = existing[
+                ~((existing["family_id"] == family_id) & (existing["candidate_id"] == candidate_id))
+            ]
             append = pd.DataFrame(
                 {
+                    "family_id": family_id,
                     "candidate_id": candidate_id,
                     "date": pd.to_datetime(returns.index),
                     "active_return": returns.values,
                 }
             )
-            combined = pd.concat([existing, append], ignore_index=True)
+            combined = append if existing.empty else pd.concat([existing, append], ignore_index=True)
             combined.to_parquet(self.path, index=False)
 
-    def matrix(self) -> pd.DataFrame:
+    def matrix(self, family_id: str | None = None) -> pd.DataFrame:
         data = self.load()
         if data.empty:
             return pd.DataFrame()
+        if family_id is not None:
+            data = data[data["family_id"] == family_id]
+            if data.empty:
+                return pd.DataFrame()
         data["date"] = pd.to_datetime(data["date"])
-        return (
+        matrix = (
             data.pivot_table(index="date", columns="candidate_id", values="active_return", aggfunc="last")
             .sort_index()
-            .fillna(0.0)
         )
+        return matrix.dropna(axis=0, how="any")
 
 
 class AuditRegistryStore:
     columns = [
         "candidate_id",
+        "family_id",
         "audited_at",
         "audit_state",
         "registry_state",
@@ -1210,7 +1238,8 @@ class AuditRegistryStore:
             ensure_cache_dir(self.path.parent)
             existing = self.load()
             existing = existing[existing["candidate_id"] != row["candidate_id"]]
-            combined = pd.concat([existing, pd.DataFrame([row])], ignore_index=True)
+            append = pd.DataFrame([row])
+            combined = append if existing.empty else pd.concat([existing, append], ignore_index=True)
             combined = combined[self.columns]
             combined.to_csv(self.path, sep="\t", index=False)
 
@@ -2039,9 +2068,14 @@ def choose_benchmark_returns(store: DataStore, dates: pd.DatetimeIndex) -> tuple
     eq_prices = store.prices_total_return(start=start, end=end)
     eq_returns = eq_prices.pct_change()
     benchmark_rows = []
-    for date in dates:
+    ordered_dates = list(pd.DatetimeIndex(dates))
+    for i, date in enumerate(ordered_dates):
+        if i == 0:
+            benchmark_rows.append(0.0)
+            continue
+        asof = ordered_dates[i - 1]
         universe = store.tradable_universe(
-            date,
+            asof,
             min_history_days=DEFAULT_MIN_HISTORY_DAYS,
             min_price=DEFAULT_MIN_PRICE,
             min_dollar_volume=DEFAULT_MIN_DOLLAR_VOLUME,
@@ -2301,6 +2335,7 @@ def evaluate(
     start, end = get_period_bounds(period)
     result = run_backtest(strategy_module, data_store, start, end)
     benchmark_name, benchmark_returns = choose_benchmark_returns(data_store, result.dates)
+    audit_family_id = default_audit_family_id(benchmark_name)
     active_returns = (result.daily_returns - benchmark_returns).fillna(0.0)
     portfolio_sharpe = sharpe_daily(result.daily_returns)
     portfolio_sharpe_lo = sharpe_annualized_lo(result.daily_returns)
@@ -2343,6 +2378,7 @@ def evaluate(
         "inner_mutations_total": inner_mutations_total,
         "outer_promotions_total": 0,
         "outer_family_size_current": 0,
+        "audit_family_id": audit_family_id,
         "execution_mode": result.diagnostics.get("execution_mode", EXECUTION_MODE),
         "missing_asset_return_count": int(result.diagnostics.get("missing_asset_return_count", 0)),
         "filtered_trade_target_count": int(result.diagnostics.get("filtered_trade_target_count", 0)),
@@ -2356,7 +2392,7 @@ def evaluate(
         metrics["score_inner"] = score_inner
         metrics.update(score_parts)
         metrics["baseline_update_scope"] = "inner_only"
-        family_matrix = AuditFamilyStore().matrix()
+        family_matrix = AuditFamilyStore().matrix(audit_family_id)
         metrics["outer_promotions_total"] = int(family_matrix.shape[1]) if not family_matrix.empty else 0
         metrics["outer_family_size_current"] = metrics["outer_promotions_total"]
         return metrics
@@ -2364,8 +2400,8 @@ def evaluate(
     family_store = AuditFamilyStore()
     if period == "outer" and persist_outer_audit and candidate_id:
         metrics["candidate_id"] = candidate_id
-        family_store.upsert(candidate_id, active_returns)
-    family_matrix = family_store.matrix()
+        family_store.upsert(audit_family_id, candidate_id, active_returns)
+    family_matrix = family_store.matrix(audit_family_id)
     family_stats = summarize_trial_family(family_matrix, active_returns, candidate_id=candidate_id)
     metrics.update(family_stats)
     metrics["outer_promotions_total"] = int(family_matrix.shape[1]) if not family_matrix.empty else 0
@@ -2374,6 +2410,7 @@ def evaluate(
         family_stats["DSR_raw"] >= AUDIT_DSR_THRESHOLD
         and ci_low > 0
         and family_stats["spa_pvalue"] < AUDIT_SPA_ALPHA
+        and family_stats["spa_family_pvalue"] < AUDIT_SPA_ALPHA
     )
     metrics["audit_state"] = "audit_pass" if audit_pass else "audit_fail"
     metrics["registry_state"] = "pending_human_review" if audit_pass else "not_registered"
@@ -2382,6 +2419,7 @@ def evaluate(
         AuditRegistryStore().upsert(
             {
                 "candidate_id": candidate_id,
+                "family_id": audit_family_id,
                 "audited_at": pd.Timestamp.utcnow().tz_localize(None).isoformat(),
                 "audit_state": metrics["audit_state"],
                 "registry_state": metrics["registry_state"],
@@ -2405,6 +2443,7 @@ def print_metrics(metrics: dict, label: str = "") -> None:
     order = [
         "period",
         "benchmark",
+        "audit_family_id",
         "candidate_id",
         "score_inner",
         "active_sharpe_daily",
@@ -2490,6 +2529,27 @@ def git_short_sha() -> str:
         return out or "nogit"
     except Exception:
         return "nogit"
+
+
+def git_branch_name() -> str:
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+        ).strip()
+        return out or "nogit-branch"
+    except Exception:
+        return "nogit-branch"
+
+
+def default_audit_family_id(benchmark_name: str) -> str:
+    override = os.environ.get("QLAB_AUDIT_FAMILY")
+    if override:
+        return override.strip()
+    branch = git_branch_name().replace("/", "_")
+    benchmark = benchmark_name.replace("/", "_")
+    return f"{branch}::schema{CACHE_SCHEMA_VERSION}::{benchmark}"
 
 
 def default_candidate_id() -> str:

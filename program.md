@@ -105,6 +105,7 @@ Also monitor:
 - `outer_promotions_total`
 - `outer_family_size_current`
 - `pbo` when available
+- `audit_family_id`; audits are scoped to the current research round / branch and benchmark, not one global pool
 
 Audit outputs are stored outside the agent-visible run log and must not be added to the search agent’s prompt context.
 
