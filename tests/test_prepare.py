@@ -531,6 +531,14 @@ class PrepareTests(unittest.TestCase):
         self.assertLess(strong_p, weak_p)
         self.assertLessEqual(strong_p, family_p + 0.10)
 
+    def test_active_slice_score_uses_multiple_monthly_blocks(self):
+        dates = pd.bdate_range("2024-01-01", periods=252)
+        returns = pd.Series(np.linspace(-0.01, 0.02, len(dates)), index=dates)
+        median, instability = prepare.active_slice_score(returns)
+        self.assertTrue(np.isfinite(median))
+        self.assertTrue(np.isfinite(instability))
+        self.assertGreaterEqual(instability, 0.0)
+
     def test_strategy_signals_survive_missing_fundamentals(self):
         store = make_store()
         date = store.prices_signal().index[-1]

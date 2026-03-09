@@ -45,6 +45,9 @@ The agent-visible score is the inner score printed by `--backtest`. It is based 
 
 This is the search objective. DSR is an audit statistic, not the optimization target.
 
+Treat each autonomous branch as a research round, not a direct attempt to update canon.
+The point of a round is to discover portable improvements, then promote only strong candidates.
+
 ## Search States
 
 Daily search loop:
@@ -183,6 +186,7 @@ Carry these forward into future runs unless a later audited result disproves the
 - Sector diversification and broader long-only books have been useful for reducing instability without obvious overfitting.
 - Risk-adjusted momentum, medium-term trend confirmation, and longer low-vol windows are promising search directions.
 - Do not move an unaudited `strategy.py` variant into `main` just because it improved `score_inner`; only process learnings belong on `main` by default.
+- Inner instability is measured across multiple overlapping quarterly windows stepped monthly, not only 4 coarse slices. Do not overfit tiny changes in that penalty.
 
 Do not spend time on:
 

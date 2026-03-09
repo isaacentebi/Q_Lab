@@ -4,6 +4,8 @@ Q_Lab is a hardened autonomous quant research harness. An external LLM agent ite
 
 This repo is for research, not live trading. It searches for candidate long-only equity strategies, scores them on an inner validation loop, and then optionally audits stronger candidates on a hidden outer slice.
 
+Treat each autonomous branch as a research round. `main` is the only trusted baseline; branch outputs are hypotheses until audited and reviewed.
+
 ## Repo Shape
 
 - `prepare.py`: fixed research scaffold, PIT data pipeline, backtest engine, evaluation, audit CLI

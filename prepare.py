@@ -2199,10 +2199,20 @@ def get_period_bounds(period: str) -> tuple[str, str]:
     raise ValueError(f"Unknown period '{period}'")
 
 
-def active_slice_score(active_returns: pd.Series, slices: int = 4) -> tuple[float, float]:
-    if len(active_returns) < slices * 5:
+def active_slice_score(
+    active_returns: pd.Series,
+    window_days: int = 63,
+    step_days: int = 21,
+    min_windows: int = 4,
+) -> tuple[float, float]:
+    active = pd.Series(active_returns).dropna()
+    if len(active) < window_days + step_days * (min_windows - 1):
         return 0.0, 0.0
-    segments = [seg for seg in np.array_split(active_returns.dropna(), slices) if len(seg) > 1]
+    segments = []
+    for start in range(0, len(active) - window_days + 1, step_days):
+        segment = active.iloc[start : start + window_days]
+        if len(segment) >= max(20, window_days // 2):
+            segments.append(segment)
     if not segments:
         return 0.0, 0.0
     sharpes = [sharpe_annualized_lo(pd.Series(segment)) for segment in segments]
