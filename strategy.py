@@ -9,7 +9,7 @@ NUM_HOLDINGS = 100
 REBALANCE_FREQ = "M"
 MIN_DOLLAR_VOLUME = 20_000_000.0
 MAX_POSITION_WEIGHT = 0.020
-MAX_SECTOR_WEIGHT = 0.25
+MAX_SECTOR_WEIGHT = 0.20
 ENTRY_RANK = NUM_HOLDINGS
 EXIT_RANK = 195
 
@@ -78,9 +78,12 @@ def signals(data, date):
     ret_12_1 = prices.iloc[-21] / prices.iloc[0] - 1.0
     vol_12m = prices.pct_change().iloc[-252:].std().replace(0, np.nan)
     risk_adj_mom = (ret_12_1 / vol_12m).replace([np.inf, -np.inf], np.nan)
-    ma_200 = prices.iloc[-200:].mean()
-    above_trend = (prices.iloc[-1] > ma_200).astype(float)
-    momentum = risk_adj_mom * (0.5 + 0.5 * above_trend)
+    # Medium-term trend confirmation: 6-3m return (intermediate confirmation)
+    ret_6_3 = prices.iloc[-63] / prices.iloc[-126] - 1.0
+    trend_confirm = (ret_6_3 > 0).astype(float)
+    ma_75 = prices.iloc[-75:].mean()
+    above_trend = (prices.iloc[-1] > ma_75).astype(float)
+    momentum = risk_adj_mom * (0.55 + 0.225 * above_trend + 0.225 * trend_confirm)
 
     # Quality composite: profitability + ROE + earnings yield
     roe = _latest_or_neutral(data, "roe", date, universe)
@@ -91,8 +94,8 @@ def signals(data, date):
     # FCF yield
     free_cash_flow_yield = _latest_or_neutral(data, "free_cash_flow_yield", date, universe)
 
-    # Low volatility (6-month window)
-    low_vol = -prices.pct_change().iloc[-126:].std()
+    # Low volatility (12-month window)
+    low_vol = -prices.pct_change().iloc[-252:].std()
 
     # Sector for neutralization (no size neutralization)
     sector = pd.Series({ticker: data.sector(ticker) for ticker in universe})
@@ -136,7 +139,7 @@ def construct(scores, data, date):
     prev = _PREV_TARGET_WEIGHTS.reindex(selected.index).fillna(0.0)
     if float(prev.sum()) > 0:
         prev /= float(prev.sum())
-        weights = 0.35 * prev + 0.65 * current
+        weights = 0.18 * prev + 0.82 * current
     else:
         weights = current
     weights /= float(weights.sum())

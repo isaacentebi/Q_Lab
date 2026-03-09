@@ -38,3 +38,56 @@ mut35	-0.006293	-0.029673	0.184381	inner_discard	monthly 0.25/0.75 smoothing - s
 mut36	-0.076692	-0.033222	0.186477	inner_discard	monthly no smoothing - zero penalties but negative active sharpe -0.077
 mut37	-0.325864	-0.031495	0.198663	inner_discard	35% momentum 10% low_vol - more momentum increased instability
 mut34v	-0.004621	-0.028301	0.183925	promote_outer	BEST: monthly 0.35/0.65 smoothing risk-adj-mom+quality+FCF+low_vol sector-neutral
+8d51da7	-0.004621	-0.028301	0.183925	baseline_loop003	loop-003 baseline: monthly 0.35/0.65 risk-adj-mom+quality+FCF+low_vol sector-neutral
+mut38	0.047453	-0.025866	0.189722	inner_keep	252-day low-vol window (was 126) - score went POSITIVE, slice_median_sharpe 4x improvement
+mut39	-0.723646	-0.034178	0.185190	inner_discard	more low_vol weight 20% less quality 30% - slice_median_sharpe collapsed, instability exploded
+mut40	0.042075	-0.025257	0.189170	inner_discard	252-day low-vol + 0.40/0.60 smoothing - instability penalty increased to 0.073
+mut41	0.052104	-0.026523	0.190121	inner_keep	252-day low-vol + 0.30/0.70 smoothing - instab dropped to 0.041, NEW BEST
+mut42	0.055932	-0.027220	0.190454	inner_keep	252-day low-vol + 0.25/0.75 smoothing - instab 0.024, NEW BEST
+mut43	0.058907	-0.027944	0.190806	inner_keep	252-day low-vol + 0.20/0.80 smoothing - instab penalty near zero 0.007, NEW BEST
+mut44	0.050434	-0.028677	0.191182	inner_discard	252-day low-vol + 0.15/0.85 smoothing - instab=0 but alpha dropped, net score lower
+mut45	0.057820	-0.027652	0.190666	inner_discard	252-day low-vol + 0.22/0.78 smoothing - close to best but 0.20 slightly better
+mut46	0.059662	-0.028237	0.190951	inner_keep	252-day low-vol + 0.18/0.82 smoothing - ZERO penalties, NEW BEST
+mut47	0.056620	-0.028384	0.191024	inner_discard	252-day low-vol + 0.17/0.83 smoothing - zero penalty but alpha slightly lower than 0.18
+mut48	0.059399	-0.028090	0.190878	inner_discard	252-day low-vol + 0.19/0.81 smoothing - tiny instab penalty, 0.18 still better
+mut49	-0.711816	-0.045501	0.204442	inner_discard	9-1m momentum instead of 12-1m - massive regression, 12-1m confirmed critical
+mut50	-0.457842	-0.043823	0.180277	inner_discard	120 holdings EXIT 230 - alpha diluted severely despite low instability
+mut51	-0.449371	-0.031812	0.208931	inner_discard	80 holdings EXIT 160 - concentrated book negative alpha, instability higher
+mut52	0.070654	-0.028340	0.191973	inner_keep	100-day MA trend filter (was 200) + 252-day vol + 0.18 smoothing - NEW BEST zero penalties
+mut53	0.083902	-0.028035	0.194307	inner_keep	63-day MA trend filter + 252-day vol + 0.18 smoothing - alpha 0.136, instab 0.052, NEW BEST
+mut54	0.045334	-0.022958	0.194743	inner_discard	50-day MA - higher instability penalty 0.069, lower net score than 63-day
+mut55	0.123110	-0.031134	0.193689	inner_keep	75-day MA trend + 252-day vol + 0.18 smoothing - alpha 0.124 instab 0.001, MAJOR NEW BEST
+mut56	-0.038319	-0.032304	0.195161	inner_discard	70-day MA - instability penalty 0.109 destroyed the score
+mut57	0.074764	-0.026429	0.193776	inner_discard	80-day MA - good but 75-day still best, instab penalty 0.030 vs 0.001
+mut58	-0.189349	-0.033866	0.230619	inner_discard	added short-term reversal factor 10% - destroyed alpha signal
+mut59	0.123110	-0.031134	0.193689	inner_discard	revenue_growth in quality - identical score, field likely unavailable/neutral
+mut60	-0.065230	-0.029900	0.191809	inner_discard	continuous trend strength ratio - binary gate works better
+mut61	0.123110	-0.031134	0.193689	inner_discard	quality weights 60/20/20 - identical, fundamental fields may be neutral
+mut62	0.123110	-0.031134	0.193689	inner_discard	VIX cash buffer (5%/10% at 25/30) - zero effect, VIX never hit thresholds
+mut63	-1.002543	-0.050240	0.248441	inner_discard	hard trend gate (zero below-trend momentum) - massive regression
+mut64	-1.397144	-0.075812	0.175708	inner_discard	pure 50/50 momentum+low_vol dropping fundamentals - massive regression
+mut65	-0.207752	-0.036632	0.200831	inner_discard	40% momentum 25% quality - more momentum hurts, current 30% optimal
+mut66	-0.441592	-0.034079	0.180133	inner_discard	added drawdown factor 10% - instability penalty exploded to 0.287
+mut67	-0.104930	-0.027045	0.196719	inner_discard	15M dollar volume filter - broader universe increased instability 0.199
+mut68	0.200136	-0.029588	0.192917	inner_keep	20% sector cap (was 25%) + 75d MA + 252d vol + 0.18 smooth - alpha doubled, MAJOR NEW BEST
+mut69	0.120940	-0.031283	0.192363	inner_discard	15% sector cap - too tight, alpha reduced to 0.121 vs 0.200 at 20%
+mut70	0.175782	-0.029939	0.192725	inner_discard	18% sector cap - 0.176, still below 20% at 0.200
+mut71	0.173218	-0.030160	0.192926	inner_discard	22% sector cap - 0.173, 20% still best at 0.200
+mut72	0.189946	-0.029599	0.193008	inner_discard	19% sector cap - 0.190, 20% still best
+mut73	0.190613	-0.029946	0.192856	inner_discard	21% sector cap - 0.191, 20% confirmed as peak
+mut74	0.200136	-0.029588	0.192917	inner_discard	1.5% position cap - identical, doesn't bind
+mut75	-0.846448	-0.047002	0.185823	inner_discard	sp500_only universe - massive regression, broader universe needed
+mut76	-0.117475	-0.027070	0.205832	inner_discard	EXIT_RANK 170 tighter buffer - turnover up, alpha negative
+mut77	0.112838	-0.031477	0.173363	inner_discard	EXIT_RANK 220 wider buffer - alpha dropped to 0.113, too stale
+mut78	-0.258812	-0.027327	0.197498	inner_discard	30M dollar volume filter - universe too narrow, alpha negative
+mut79	0.238396	-0.018737	0.193266	inner_keep	6-3m trend confirmation + 75d MA gate (0.4+0.3+0.3) - alpha 0.238, MAJOR NEW BEST
+mut80	0.133658	-0.022972	0.193012	inner_discard	gate weights 0.3/0.35/0.35 - alpha dropped to 0.134 from 0.238
+mut81	0.243220	-0.025126	0.189173	inner_keep	gate weights 0.5/0.25/0.25 - alpha 0.243, NEW BEST
+mut82	0.186751	-0.023083	0.190394	inner_discard	gate weights 0.45/0.275/0.275 - alpha dropped to 0.187
+mut83	0.265128	-0.023520	0.189958	inner_keep	gate weights 0.55/0.225/0.225 - alpha 0.265, instab IQR 0.578, NEW BEST
+mut84	0.241360	-0.020675	0.190217	inner_discard	gate weights 0.6/0.2/0.2 - alpha dropped to 0.241, 0.55 confirmed as peak
+mut85	0.239642	-0.020558	0.188429	inner_discard	3-1m trend confirmation - alpha 0.240, slightly below 6-3m at 0.265
+mut86	-0.260903	-0.031054	0.192378	inner_discard	9-6m trend confirmation - instability exploded, revert to 6-3m
+mut87	0.069601	-0.024016	0.191069	inner_discard	min_price=5 - alpha diluted to 0.070
+mut88	0.265128	-0.023520	0.189958	inner_discard	min_history=180 - identical, no effect
+mut89	-0.244260	-0.024813	0.187861	inner_discard	downside deviation (semi-vol) for low_vol - instability exploded
