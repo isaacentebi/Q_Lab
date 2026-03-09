@@ -172,6 +172,17 @@ Raw accessors like `fundamental(field)` and `macro(field)` are for advanced use 
 - explicit cash buffering in risk-off regimes
 - benchmark-relative, lower-turnover constructions
 
+## Current Learnings
+
+Carry these forward into future runs unless a later audited result disproves them:
+
+- Buffered membership and moderate weight smoothing are useful construction primitives for this harness.
+- Once `turnover_penalty` is already zero, prefer searching for stronger active edge rather than polishing turnover further.
+- Smooth portfolios with negative `active_sharpe_daily` are not good candidates; they are benchmark-hugging, not alpha.
+- Sector diversification and broader long-only books have been useful for reducing instability without obvious overfitting.
+- Risk-adjusted momentum, medium-term trend confirmation, and longer low-vol windows are promising search directions.
+- Do not move an unaudited `strategy.py` variant into `main` just because it improved `score_inner`; only process learnings belong on `main` by default.
+
 Do not spend time on:
 
 - same-day execution tricks
