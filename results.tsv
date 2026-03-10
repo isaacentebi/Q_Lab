@@ -1,40 +1,41 @@
 commit	score_inner	active_sharpe_daily	turnover	status	description
-e783835	-2.277910	-0.074569	0.331677	inner_keep	baseline multi-factor monthly long-only strategy before mutations
-mut1	-0.625610	-0.024021	0.386795	inner_keep	100-name quarterly buffered, quality-tilted, sector-only neutral, no cash drag
-mut2	-0.468041	-0.023897	0.366490	inner_keep	wider buffer EXIT_RANK 180, heavier smoothing 0.7/0.3 reduced turnover penalty
-mut3	-0.541688	-0.039641	0.342613	inner_discard	added book_to_price value factor, reduced momentum to 20% - value hurt active returns
-mut4	-0.739098	-0.040470	0.333174	inner_discard	no momentum pure quality/FCF/low-vol - instability 0 but active sharpe -0.614 too negative
-mut5	-0.453672	-0.021401	0.368780	inner_keep	trend-confirmed momentum (200d MA gate) improved active sharpe to -0.181
-mut6	-0.733943	-0.024442	0.367312	inner_discard	120 holdings EXIT_RANK 200 smoothing 0.75/0.25 - instability penalty exploded to 0.399
-mut7	-0.597879	-0.023587	0.361898	inner_discard	score-tilted weights increased instability penalty to 0.159 and hurt active sharpe
-mut8	-0.813392	-0.035472	0.376195	inner_discard	added conservative investment factor (neg asset_growth) - hurt active sharpe and instability
-mut9	-0.534970	-0.043943	0.310311	inner_discard	ultra-sticky EXIT_RANK 250 smoothing 0.85/0.15 - turnover penalty halved but instability tripled
-mut10	-0.567496	-0.032943	0.347511	inner_discard	EXIT_RANK 200 smoothing 0.75/0.25 - best sharpe -0.079 but instability 0.342
-mut11	-0.487377	-0.028381	0.340578	inner_discard	20% momentum 40% quality 20% FCF 20% low_vol - penalties low but active sharpe -0.309
-mut12	-0.348200	-0.028321	0.356894	inner_keep	risk-adjusted momentum (return/vol) improved all three components
-mut13	-0.225949	-0.029832	0.345485	inner_keep	EXIT_RANK 190 smoothing 0.72/0.28 - active sharpe nearly zero at -0.037
-mut14	-0.207460	-0.030620	0.342604	inner_keep	EXIT_RANK 195 smoothing 0.73/0.27 - active sharpe -0.024 - NEW BEST
-mut15	-0.284248	-0.030401	0.339169	inner_discard	EXIT_RANK 200 smoothing 0.74/0.26 - overshot past optimum sharpe -0.087 instab 0.064
-mut16	-0.332936	-0.030147	0.347931	inner_discard	MIN_DOLLAR_VOLUME 25M - smaller universe reduced alpha, sharpe regressed to -0.148
-mut17	-0.811681	-0.035159	0.354845	inner_discard	blended 12-1m + 6-1m risk-adj momentum - 6m component harmful, sharpe -0.594
-mut18	-0.749463	-0.041798	0.350837	inner_discard	risk-adj momentum without trend penalty - trend filter is critical, sharpe -0.492
-mut19	-0.207460	-0.030620	0.342604	inner_discard	added earnings_yield to quality composite - zero effect identical to mut14
-mut20	-0.060673	-0.033507	0.172082	inner_keep	monthly rebal 0.92/0.08 smoothing - ZERO turnover penalty, POSITIVE active sharpe +0.054
-mut21	-0.064948	-0.034792	0.171277	inner_discard	monthly 0.94/0.06 smoothing - more inertia did not reduce instability
-mut22	-0.056283	-0.032450	0.172950	inner_keep	monthly 0.90/0.10 smoothing - active sharpe +0.058, instab 0.114
-mut23	-0.052477	-0.031479	0.173776	inner_keep	monthly 0.88/0.12 smoothing - active sharpe +0.062
-mut24	-0.048877	-0.030631	0.174576	inner_keep	monthly 0.86/0.14 smoothing - active sharpe +0.065
-mut25	-0.038375	-0.028597	0.176684	inner_keep	monthly 0.80/0.20 smoothing - active sharpe +0.071, instab 0.109
-mut26	-0.031193	-0.027494	0.178230	inner_keep	monthly 0.75/0.25 smoothing - sharpe +0.072, instab 0.104
-mut27	-0.024785	-0.026777	0.179405	inner_keep	monthly 0.70/0.30 smoothing - sharpe +0.072, instab 0.097
-mut28	-0.019348	-0.026398	0.180395	inner_keep	monthly 0.65/0.35 smoothing - sharpe +0.071, instab 0.090
-mut29	-0.014798	-0.026294	0.181264	inner_keep	monthly 0.60/0.40 smoothing - sharpe +0.067, instab 0.082
-mut30	-0.011099	-0.026413	0.181990	inner_keep	monthly 0.55/0.45 smoothing - sharpe +0.062, instab IQR 0.897
-mut31	-0.008232	-0.026708	0.182577	inner_keep	monthly 0.50/0.50 smoothing - sharpe +0.056, instab 0.064
-mut32	-0.006208	-0.027144	0.183139	inner_keep	monthly 0.45/0.55 smoothing - sharpe +0.048, instab 0.054
-mut33	-0.005004	-0.027684	0.183575	inner_keep	monthly 0.40/0.60 smoothing - sharpe +0.038, instab 0.043
-mut34	-0.004621	-0.028301	0.183925	inner_keep	monthly 0.35/0.65 smoothing - sharpe +0.027, instab 0.032 - NEW BEST
-mut35	-0.006293	-0.029673	0.184381	inner_discard	monthly 0.25/0.75 smoothing - sharpe vanished, instab near threshold
-mut36	-0.076692	-0.033222	0.186477	inner_discard	monthly no smoothing - zero penalties but negative active sharpe -0.077
-mut37	-0.325864	-0.031495	0.198663	inner_discard	35% momentum 10% low_vol - more momentum increased instability
-mut34v	-0.004621	-0.028301	0.183925	promote_outer	BEST: monthly 0.35/0.65 smoothing risk-adj-mom+quality+FCF+low_vol sector-neutral
+baseline	-1.120242	-0.014186	0.197099	inner_keep	baseline: current strategy monthly rebal 0.35/0.65 smoothing 100 names
+mut1	-1.486029	-0.081521	0.127476	inner_discard	full-universe tilt 30% all 702 names - factor tilt destructive, active sharpe -0.082
+mut2	-1.687364	-0.043632	0.172129	inner_discard	200 holdings quality-only no sector neutral - factors negatively predictive, active sharpe -0.044
+mut3	-1.702240	-0.080254	0.127556	inner_discard	benchmark replication equal-weight all 237 names - still -0.080 active sharpe structural mismatch
+mut4	-1.918334	-0.095385	0.041794	inner_discard	weekly rebal benchmark replication - more lag events made it worse, sector cap always binding
+mut5	-1.787269	-0.067730	0.132593	inner_discard	no sector cap 0.50 benchmark replication - active improved -1.3% but concentration penalty 0.349
+mut6	-1.498746	-0.087315	0.131186	inner_discard	sector cap 0.30 benchmark replication - best so far but median sharpe still -0.957
+mut7	-1.617987	-0.080714	0.127752	inner_discard	quality tilt 10% benchmark universe - quality factors hurt, active -3.8%
+mut8	-1.595419	-0.022670	0.127591	inner_discard	original factors benchmark universe sector cap 0.30 - median sharpe degraded to -0.787
+mut9	-0.071044	-0.000099	0.511028	inner_keep	short-term reversal+quality - median sharpe 1.664 but turnover 0.511 instab 3.44
+mut10	-0.779157	-0.003045	0.286853	inner_discard	EXIT_RANK 250 smoothing 0.50 reversal 30% - turnover 0.287 but instability still 3.39
+mut11	-1.148110	-0.048387	0.236578	inner_discard	200 holdings reversal+quality - zero turnover penalty but median sharpe diluted to 0.092
+mut12	-1.067146	0.008518	0.253319	inner_discard	heavy smoothing 0.70/0.30 - positive active sharpe but instability WORSE at 3.77
+mut13	-1.435535	-0.017804	0.255058	inner_discard	wide buffer ENTRY=80 EXIT=400 - buffer fights reversal signal, instability exploded to 4.16
+mut14	-2.612756	-0.069622	0.712974	inner_discard	pure reversal no quality no sector neutral - cross-sector reversal fails badly
+mut15	-0.388093	-0.014376	0.423232	inner_discard	2-month reversal - lower turnover but instability worse, net score -0.388 vs -0.071
+mut16	-0.543725	-0.030359	0.602783	inner_discard	reversal 50% - turnover exploded and median sharpe halved to 0.890
+mut17	-0.267223	-0.006575	0.508432	inner_discard	inverse-vol weighting - instability reduced to 3.02 but median sharpe dropped to 1.25
+mut18	-0.983446	-0.019199	0.311149	inner_discard	5-factor 20% reversal blend - instability 2.53 but median sharpe near zero
+mut19	-0.398808	-0.019435	0.573471	inner_discard	reversal 45% quality 30% FCF 25% - turnover 0.573 median sharpe 1.103 score -0.399
+mut20	-0.217286	-0.002870	0.439327	inner_discard	reversal 35% quality 40% - median sharpe 1.319 turnover 0.439 score -0.217
+mut21	-0.780113	-0.008313	0.527157	inner_discard	partial sector neutral 50/50 - median sharpe dropped to 0.939 vs 1.664 in mut9
+mut22	-1.429273	-0.026487	0.443700	inner_discard	reversal+quality+FCF+low_vol - low-vol contradicts reversal, median sharpe -0.196
+mut23	-0.018471	0.002653	0.510540	inner_keep	NEW BEST smoothing 0.40/0.60 reversal+quality+FCF - median sharpe 1.783 POSITIVE active returns
+mut24	-0.010729	0.003310	0.510527	inner_keep	NEW BEST smoothing 0.42/0.58 median sharpe 1.815 active annual +0.5%
+mut25	-0.003305	0.003965	0.510843	inner_keep	NEW BEST smoothing 0.45/0.55 median sharpe 1.854 score nearly ZERO
+mut26	0.008931	0.004600	0.510940	inner_keep	**FIRST POSITIVE** smoothing 0.48/0.52 median sharpe 1.893
+mut27	0.024555	0.005093	0.511232	inner_keep	NEW BEST smoothing 0.50/0.50 median sharpe 1.925 active annual +0.8%
+mut28	0.053677	0.005940	0.511955	inner_keep	NEW BEST smoothing 0.55/0.45 median sharpe 1.982 active annual +0.9%
+mut29	0.092501	0.006645	0.512748	inner_keep	NEW BEST smoothing 0.60/0.40 median sharpe 2.012 active annual +1.0%
+mut30	0.134226	0.007686	0.513916	inner_keep	NEW BEST smoothing 0.65/0.35 median sharpe 2.040 active annual +1.2%
+mut31	0.179327	0.008505	0.514254	inner_keep	NEW BEST smoothing 0.70/0.30 median sharpe 2.077 instab slightly lower
+mut32	0.249330	0.009051	0.515216	inner_keep	NEW BEST smoothing 0.75/0.25 median sharpe 2.124 instab 3.703 declining
+mut33	0.303753	0.009930	0.516408	inner_keep	NEW BEST smoothing 0.80/0.20 median sharpe 2.170 instab 3.683
+mut34	0.376115	0.011196	0.517723	inner_keep	NEW BEST smoothing 0.85/0.15 median sharpe 2.238 active annual +1.7%
+mut35	0.415894	0.012264	0.518505	inner_keep	NEW BEST smoothing 0.90/0.10 median sharpe 2.261 instab 3.635
+mut36	0.325323	0.010535	0.517543	inner_discard	smoothing 0.93/0.07 - past peak, median sharpe dropped to 2.182
+mut37	0.329901	0.011407	0.516889	inner_discard	smoothing 0.92/0.08 - past peak, score 0.330 vs 0.416 at 0.90
+mut38	0.394316	0.011637	0.517942	inner_discard	smoothing 0.88/0.12 - score 0.394 slightly below 0.90 peak
+mut35-confirm	0.415894	0.012264	0.518505	inner_keep	BEST CONFIRMED n=10 smoothing 0.90/0.10 reversal+quality+FCF sector-neutral

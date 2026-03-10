@@ -70,7 +70,7 @@ def _buffered_selection(scores: pd.Series) -> pd.Series:
 
 
 def signals(data, date):
-    """Return a quality-tilted cross-sectional alpha score, sector-neutralized only."""
+    """Short-term reversal + quality + FCF, sector-neutralized."""
     universe = data.tradable_universe(
         date,
         min_history_days=252,
@@ -85,15 +85,11 @@ def signals(data, date):
     if len(prices) < 190:
         return pd.Series(dtype=float)
 
-    # Risk-adjusted momentum: 12-1m return / volatility, trend-penalized
-    ret_12_1 = prices.iloc[-21] / prices.iloc[0] - 1.0
-    vol_12m = prices.pct_change().iloc[-252:].std().replace(0, np.nan)
-    risk_adj_mom = (ret_12_1 / vol_12m).replace([np.inf, -np.inf], np.nan)
-    ma_200 = prices.iloc[-200:].mean()
-    above_trend = (prices.iloc[-1] > ma_200).astype(float)
-    momentum = risk_adj_mom * (0.5 + 0.5 * above_trend)
+    # Short-term reversal: negative of 1-month return
+    ret_1m = prices.iloc[-1] / prices.iloc[-21] - 1.0
+    reversal = -ret_1m
 
-    # Quality composite: profitability + ROE + earnings yield
+    # Quality composite
     roe = _latest_or_neutral(data, "roe", date, universe)
     profitability = _latest_or_neutral(data, "gross_profitability", date, universe)
     earnings_yield = _latest_or_neutral(data, "earnings_yield", date, universe)
@@ -102,15 +98,12 @@ def signals(data, date):
     # FCF yield
     free_cash_flow_yield = _latest_or_neutral(data, "free_cash_flow_yield", date, universe)
 
-    # Low volatility (6-month window)
-    low_vol = -prices.pct_change().iloc[-126:].std()
-
-    # Sector for neutralization (no size neutralization)
+    # Sector for neutralization
     sector = pd.Series({ticker: data.sector(ticker) for ticker in universe})
 
     ranks = pd.concat(
         [
-            _neutral_rank(data, momentum, universe).rename("momentum"),
+            _neutral_rank(data, reversal, universe).rename("reversal"),
             _neutral_rank(data, quality, universe).rename("quality"),
             _neutral_rank(
                 data,
@@ -119,16 +112,14 @@ def signals(data, date):
                 ),
                 universe,
             ).rename("fcf_yield"),
-            _neutral_rank(data, low_vol, universe).rename("low_vol"),
         ],
         axis=1,
     )
 
     score = (
-        0.30 * ranks["momentum"]
+        0.40 * ranks["reversal"]
         + 0.35 * ranks["quality"]
-        + 0.20 * ranks["fcf_yield"]
-        + 0.15 * ranks["low_vol"]
+        + 0.25 * ranks["fcf_yield"]
     ).reindex(universe)
 
     score = data.neutralize_cross_section(score.fillna(0.0), by=[sector])
@@ -148,7 +139,7 @@ def construct(scores, data, date):
     prev = _PREV_TARGET_WEIGHTS.reindex(selected.index).fillna(0.0)
     if float(prev.sum()) > 0:
         prev /= float(prev.sum())
-        weights = 0.35 * prev + 0.65 * current
+        weights = 0.90 * prev + 0.10 * current
     else:
         weights = current
     weights /= float(weights.sum())
@@ -175,7 +166,7 @@ def risk(weights, data, date):
         asset_weights = asset_weights / float(asset_weights.sum()) * target_total
 
     for _ in range(10):
-        prev = asset_weights.copy()
+        prev_w = asset_weights.copy()
         asset_weights = asset_weights.clip(lower=0.0, upper=MAX_POSITION_WEIGHT)
 
         for members in sectors.values():
@@ -197,7 +188,7 @@ def risk(weights, data, date):
                 add = eligible / float(eligible.sum()) * slack
                 asset_weights.loc[eligible.index] += add
 
-        if np.allclose(asset_weights.reindex(prev.index).fillna(0.0), prev.fillna(0.0), atol=1e-10):
+        if np.allclose(asset_weights.reindex(prev_w.index).fillna(0.0), prev_w.fillna(0.0), atol=1e-10):
             break
 
     final = asset_weights.copy()
